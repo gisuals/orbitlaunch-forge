@@ -15,6 +15,8 @@ interface DeploymentData {
   chainId: number;
   rpcUrl: string;
   deployedAt: string;
+  txHash?: string;
+  deployer?: string;
 }
 
 const Success = () => {
@@ -152,6 +154,53 @@ const Success = () => {
                   <p className="text-sm">{data.description}</p>
                 </div>
               )}
+
+              {data.txHash && (
+                <div className="flex justify-between items-start p-4 rounded-2xl bg-gradient-primary/10 border border-primary/20">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-primary mb-1">Transaction Hash</p>
+                    <p className="font-medium font-mono text-xs break-all text-primary">{data.txHash}</p>
+                  </div>
+                  <div className="flex gap-2 ml-2 flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(data.txHash, "Transaction hash")}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                    >
+                      <a
+                        href={`https://sepolia.arbiscan.io/tx/${data.txHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {data.deployer && (
+                <div className="flex justify-between items-start p-4 rounded-2xl bg-muted/50">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Deployer Address</p>
+                    <p className="font-medium font-mono text-sm">{data.deployer}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(data.deployer, "Deployer address")}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -159,18 +208,22 @@ const Success = () => {
             <p className="text-sm text-muted-foreground mb-4">
               Deployed at: {new Date(data.deployedAt).toLocaleString()}
             </p>
-            
+
             <div className="flex gap-3">
               <Button
                 variant="hero"
                 size="lg"
                 className="flex-1 gap-2"
-                onClick={() => {
-                  toast.success("Opening block explorer...");
-                }}
+                asChild
               >
-                <ExternalLink className="h-4 w-4" />
-                View Explorer
+                <a
+                  href="https://sepolia.arbiscan.io/address/0x4D7d440a869E5Aadd2b4589bAeaEbff3391a3232"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  View Contract
+                </a>
               </Button>
               
               <Button

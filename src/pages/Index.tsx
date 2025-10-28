@@ -13,7 +13,10 @@ const Index = () => {
           <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             OrbitLaunch
           </h1>
-          <ThemeToggle />
+          <div className="flex items-center gap-3">
+            <appkit-button />
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 

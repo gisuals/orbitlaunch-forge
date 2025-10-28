@@ -12,6 +12,20 @@ dist
 dist-ssr
 *.local
 
+# Environment variables (CRITICAL - NEVER COMMIT!)
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Hardhat
+cache
+artifacts
+typechain-types
+coverage/
+coverage.json
+.openzeppelin/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
