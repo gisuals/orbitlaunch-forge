@@ -74,20 +74,21 @@ const Deploy = () => {
         ...formData,
         txHash,
         chainId: Math.floor(Math.random() * 900000) + 100000,
-        rpcUrl: `https://rpc.${formData.chainName.toLowerCase().replace(/\s+/g, '-')}.arbitrum.io`,
+        rpcUrl: '', // RPC URL will be configured after actual chain deployment
         deployedAt: new Date().toISOString(),
         deployer: address,
         templateType: selectedTemplate,
         gasTokenAddress,
         gasTokenSymbol: gasTokenInfo?.symbol,
         gasTokenName: gasTokenInfo?.name,
+        status: 'registered', // Chain is registered, not yet deployed
       };
 
       sessionStorage.setItem("deploymentData", JSON.stringify(deploymentData));
-      toast.success("Chain deployment successful!");
+      toast.success("Chain registered successfully! Configuration saved on-chain.");
 
       setTimeout(() => {
-        navigate("/dashboard");
+        navigate("/success");
       }, 1000);
     }
   }, [isSuccess, txHash, navigate, formData, address, selectedTemplate, gasTokenAddress, gasTokenInfo]);
