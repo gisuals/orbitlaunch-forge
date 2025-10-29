@@ -1,14 +1,56 @@
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from 'wagmi';
-import { parseAbiItem } from 'viem';
 import { uploadToIPFS, ipfsHashToBytes32, type DeploymentMetadata } from '@/lib/ipfs';
 
 const CONTRACT_ADDRESS = (import.meta.env.VITE_CONTRACT_ADDRESS || '') as `0x${string}`;
 
 const ABI = [
-  parseAbiItem('function registerDeployment(bytes32 _metadataHash, uint64 _chainId) external returns (bytes32)'),
-  parseAbiItem('function getUserDeploymentIds(address _user) external view returns (bytes32[])'),
-  parseAbiItem('function getDeployment(bytes32 _deploymentId) external view returns (tuple(bytes32 metadataHash, uint64 chainId, uint64 timestamp, address deployer))'),
-  parseAbiItem('event DeploymentRegistered(bytes32 indexed deploymentId, address indexed deployer, bytes32 metadataHash, uint64 chainId, uint64 timestamp)'),
+  {
+    inputs: [
+      { name: '_metadataHash', type: 'bytes32' },
+      { name: '_chainId', type: 'uint64' }
+    ],
+    name: 'registerDeployment',
+    outputs: [{ name: 'deploymentId', type: 'bytes32' }],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    inputs: [{ name: '_user', type: 'address' }],
+    name: 'getUserDeploymentIds',
+    outputs: [{ name: '', type: 'bytes32[]' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [{ name: '_deploymentId', type: 'bytes32' }],
+    name: 'getDeployment',
+    outputs: [
+      {
+        components: [
+          { name: 'metadataHash', type: 'bytes32' },
+          { name: 'chainId', type: 'uint64' },
+          { name: 'timestamp', type: 'uint64' },
+          { name: 'deployer', type: 'address' }
+        ],
+        name: '',
+        type: 'tuple'
+      }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'deploymentId', type: 'bytes32' },
+      { indexed: true, name: 'deployer', type: 'address' },
+      { indexed: false, name: 'metadataHash', type: 'bytes32' },
+      { indexed: false, name: 'chainId', type: 'uint64' },
+      { indexed: false, name: 'timestamp', type: 'uint64' }
+    ],
+    name: 'DeploymentRegistered',
+    type: 'event'
+  }
 ] as const;
 
 export function useDeployContract() {
@@ -43,7 +85,7 @@ export function useDeployContract() {
         abi: ABI,
         functionName: 'registerDeployment',
         args: [bytes32Hash as `0x${string}`, BigInt(chainId)],
-      });
+      } as any);
     } catch (error) {
       console.error('Failed to register deployment:', error);
       throw error;

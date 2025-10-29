@@ -15,7 +15,7 @@ if (!projectId) {
 
 // 2. Create wagmiAdapter
 export const wagmiAdapter = new WagmiAdapter({
-  networks: [arbitrum, arbitrumSepolia],
+  networks: [arbitrumSepolia, arbitrum],
   projectId,
   ssr: false,
 });
@@ -23,7 +23,8 @@ export const wagmiAdapter = new WagmiAdapter({
 // 3. Create modal
 export const modal = createAppKit({
   adapters: [wagmiAdapter],
-  networks: [arbitrum, arbitrumSepolia],
+  networks: [arbitrumSepolia, arbitrum],
+  defaultNetwork: arbitrumSepolia,
   projectId,
   metadata: {
     name: 'OrbitLaunch',
