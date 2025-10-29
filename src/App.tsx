@@ -6,6 +6,7 @@ import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import Deploy from "./pages/Deploy";
 import Success from "./pages/Success";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -18,6 +19,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/deploy" element={<Deploy />} />
           <Route path="/success" element={<Success />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

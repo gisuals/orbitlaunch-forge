@@ -15,6 +15,10 @@ export interface DeploymentMetadata {
   rpcUrl?: string;
   explorerUrl?: string;
   logo?: string;
+  templateType?: string;
+  gasTokenAddress?: string;
+  gasTokenSymbol?: string;
+  gasTokenName?: string;
 }
 
 /**
