@@ -17,10 +17,20 @@ import { ArrowLeft, Rocket, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useDeployContract } from "@/hooks/useDeployContract";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAccount, useChainId, useSwitchChain } from "wagmi";
+import { arbitrumSepolia } from "wagmi/chains";
 
 const Deploy = () => {
   const navigate = useNavigate();
   const { registerDeployment, isLoading, isSuccess, txHash, error, isConnected, address } = useDeployContract();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
+
+  const isCorrectNetwork = chainId === arbitrumSepolia.id;
+
+  const handleSwitchNetwork = () => {
+    switchChain({ chainId: arbitrumSepolia.id });
+  };
 
   const [formData, setFormData] = useState({
     chainName: "",
@@ -132,11 +142,27 @@ const Deploy = () => {
           </Alert>
         )}
 
-        {isConnected && (
+        {isConnected && !isCorrectNetwork && (
+          <Alert className="mb-6 bg-destructive/10 border-destructive/20">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <AlertDescription className="text-destructive">
+              Wrong network! Please switch to Arbitrum Sepolia testnet.{" "}
+              <Button
+                variant="link"
+                className="h-auto p-0 text-destructive underline"
+                onClick={handleSwitchNetwork}
+              >
+                Switch Network
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isConnected && isCorrectNetwork && (
           <Alert className="mb-6 bg-primary/10 border-primary/20">
             <AlertCircle className="h-4 w-4 text-primary" />
             <AlertDescription className="text-primary">
-              Connected: {address?.substring(0, 6)}...{address?.substring(38)} - Ready to deploy!
+              Connected: {address?.substring(0, 6)}...{address?.substring(38)} on Arbitrum Sepolia - Ready to deploy!
             </AlertDescription>
           </Alert>
         )}
@@ -225,7 +251,7 @@ const Deploy = () => {
               variant="hero"
               size="xl"
               className="w-full gap-2"
-              disabled={!isConnected || isLoading}
+              disabled={!isConnected || !isCorrectNetwork || isLoading}
             >
               {isLoading ? (
                 <>
@@ -235,7 +261,7 @@ const Deploy = () => {
               ) : (
                 <>
                   <Rocket className="h-5 w-5" />
-                  {isConnected ? "Deploy Chain" : "Connect Wallet First"}
+                  {!isConnected ? "Connect Wallet First" : !isCorrectNetwork ? "Switch to Arbitrum Sepolia" : "Deploy Chain"}
                 </>
               )}
             </Button>
