@@ -46,8 +46,18 @@ const Dashboard = () => {
   }, [searchParams]);
 
   const rpcUrl = deploymentData?.rpcUrl || "";
-  const { stats, isLoading: statsLoading, error: statsError } = useChainStats(rpcUrl);
-  const { blocks, averageBlockTime, isLoading: blocksLoading } = useRecentBlocks(rpcUrl, 5);
+  const hasRpcUrl = rpcUrl && rpcUrl.length > 0 && rpcUrl.startsWith('http');
+
+  // Only fetch stats if we have a valid RPC URL
+  const { stats, isLoading: statsLoading, error: statsError } = useChainStats(
+    hasRpcUrl ? rpcUrl : '',
+    hasRpcUrl ? 10000 : 0 // Disable polling if no RPC
+  );
+  const { blocks, averageBlockTime, isLoading: blocksLoading } = useRecentBlocks(
+    hasRpcUrl ? rpcUrl : '',
+    5,
+    hasRpcUrl ? 15000 : 0 // Disable polling if no RPC
+  );
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -119,6 +129,30 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Registration Notice */}
+        {!hasRpcUrl && (
+          <Card className="p-6 mb-6 border-amber-500/50 bg-amber-500/5">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-500 mb-2">Chain Registered - Deployment Pending</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Your chain configuration has been successfully registered on-chain. However, the actual L3 chain
+                  deployment requires additional setup through Arbitrum's Orbit deployment tools.
+                </p>
+                <div className="space-y-2 text-sm">
+                  <p className="font-medium">Next Steps:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                    <li>Use <a href="https://docs.arbitrum.io/launch-orbit-chain/orbit-quickstart" target="_blank" rel="noopener noreferrer" className="text-primary underline">Arbitrum Orbit CLI</a> to deploy your L3 chain</li>
+                    <li>Configure the chain using your registered parameters</li>
+                    <li>Return here and update the RPC URL to view live stats</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Chain Header */}
         <div className="mb-8">
           <div className="flex items-start justify-between mb-4">
@@ -127,7 +161,7 @@ const Dashboard = () => {
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="gap-1">
                   <Activity className="h-3 w-3" />
-                  {stats?.isResponding ? "Live" : "Offline"}
+                  {hasRpcUrl ? (stats?.isResponding ? "Live" : "Offline") : "Registered"}
                 </Badge>
                 <Badge variant="outline">{deploymentData.symbol}</Badge>
                 {deploymentData.templateType && (
@@ -208,7 +242,7 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {statsError && (
+        {statsError && hasRpcUrl && (
           <Card className="p-6 mb-8 border-destructive/50 bg-destructive/5">
             <div className="flex items-center gap-2 text-destructive">
               <AlertCircle className="h-5 w-5" />
@@ -222,22 +256,31 @@ const Dashboard = () => {
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4">Chain Configuration</h3>
             <div className="space-y-3">
-              <div className="flex items-center justify-between py-2 border-b border-border/50">
-                <span className="text-sm text-muted-foreground">RPC URL</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-mono max-w-[200px] truncate">
-                    {deploymentData.rpcUrl}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => copyToClipboard(deploymentData.rpcUrl, "RPC URL")}
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
+              {hasRpcUrl && (
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">RPC URL</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-mono max-w-[200px] truncate">
+                      {deploymentData.rpcUrl}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => copyToClipboard(deploymentData.rpcUrl, "RPC URL")}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {!hasRpcUrl && (
+                <div className="flex items-center justify-between py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">RPC URL</span>
+                  <span className="text-sm text-amber-600">Not yet configured</span>
+                </div>
+              )}
 
               <div className="flex items-center justify-between py-2 border-b border-border/50">
                 <span className="text-sm text-muted-foreground">Base Network</span>
