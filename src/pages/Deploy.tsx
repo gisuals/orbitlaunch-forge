@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,11 +13,15 @@ import {
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ArrowLeft, Rocket } from "lucide-react";
+import { ArrowLeft, Rocket, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useDeployContract } from "@/hooks/useDeployContract";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Deploy = () => {
   const navigate = useNavigate();
+  const { registerDeployment, isLoading, isSuccess, txHash, error, isConnected, address } = useDeployContract();
+
   const [formData, setFormData] = useState({
     chainName: "",
     symbol: "",
@@ -26,31 +30,67 @@ const Deploy = () => {
     description: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Watch for successful deployment
+  useEffect(() => {
+    if (isSuccess && txHash) {
+      const deploymentData = {
+        ...formData,
+        txHash,
+        chainId: Math.floor(Math.random() * 900000) + 100000,
+        rpcUrl: `https://rpc.${formData.chainName.toLowerCase().replace(/\s+/g, '-')}.arbitrum.io`,
+        deployedAt: new Date().toISOString(),
+        deployer: address,
+      };
+
+      sessionStorage.setItem("deploymentData", JSON.stringify(deploymentData));
+      toast.success("Chain deployment successful!");
+
+      setTimeout(() => {
+        navigate("/success");
+      }, 1000);
+    }
+  }, [isSuccess, txHash, navigate, formData, address]);
+
+  // Watch for errors
+  useEffect(() => {
+    if (error) {
+      toast.error(error.message || "Deployment failed");
+    }
+  }, [error]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.chainName || !formData.symbol || !formData.baseNetwork || !formData.nativeToken) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    // Generate mock deployment data
-    const deploymentData = {
-      ...formData,
-      chainId: Math.floor(Math.random() * 900000) + 100000,
-      rpcUrl: `https://rpc.${formData.chainName.toLowerCase().replace(/\s+/g, '-')}.arbitrum.io`,
-      deployedAt: new Date().toISOString(),
-    };
+    if (!isConnected) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
 
-    // Store in session storage
-    sessionStorage.setItem("deploymentData", JSON.stringify(deploymentData));
-    
-    toast.success("Chain deployment initiated!");
-    
-    // Navigate to success page
-    setTimeout(() => {
-      navigate("/success");
-    }, 500);
+    try {
+      const chainId = Math.floor(Math.random() * 900000) + 100000;
+
+      await registerDeployment(
+        {
+          chainName: formData.chainName,
+          symbol: formData.symbol,
+          nativeToken: formData.nativeToken,
+          description: formData.description,
+          baseNetwork: formData.baseNetwork,
+          rpcUrl: `https://rpc.${formData.chainName.toLowerCase().replace(/\s+/g, '-')}.arbitrum.io`,
+        },
+        chainId
+      );
+
+      toast.success("Transaction submitted! Check your wallet...");
+    } catch (err: any) {
+      console.error("Deployment error:", err);
+      toast.error(err.message || "Failed to deploy chain");
+    }
   };
 
   return (
@@ -68,7 +108,10 @@ const Deploy = () => {
           <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             OrbitLaunch
           </h1>
-          <ThemeToggle />
+          <div className="flex items-center gap-3">
+            <appkit-button />
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
@@ -79,6 +122,24 @@ const Deploy = () => {
             Configure your Arbitrum Orbit chain parameters
           </p>
         </div>
+
+        {!isConnected && (
+          <Alert className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Please connect your wallet to deploy a chain. Click the "Connect Wallet" button above.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isConnected && (
+          <Alert className="mb-6 bg-primary/10 border-primary/20">
+            <AlertCircle className="h-4 w-4 text-primary" />
+            <AlertDescription className="text-primary">
+              Connected: {address?.substring(0, 6)}...{address?.substring(38)} - Ready to deploy!
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Card className="p-6 shadow-card border-border/50">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -164,9 +225,19 @@ const Deploy = () => {
               variant="hero"
               size="xl"
               className="w-full gap-2"
+              disabled={!isConnected || isLoading}
             >
-              <Rocket className="h-5 w-5" />
-              Deploy Chain
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Deploying...
+                </>
+              ) : (
+                <>
+                  <Rocket className="h-5 w-5" />
+                  {isConnected ? "Deploy Chain" : "Connect Wallet First"}
+                </>
+              )}
             </Button>
           </form>
         </Card>
