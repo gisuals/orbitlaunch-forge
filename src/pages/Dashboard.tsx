@@ -433,13 +433,21 @@ const Dashboard = () => {
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4">Chain Configuration</h3>
             <div className="space-y-3">
-              {hasValidRpcUrl && (
-                <div className="flex items-center justify-between py-2 border-b border-border/50">
+              {/* RPC URL - Show both valid and placeholder */}
+              <div className="py-2 border-b border-border/50">
+                <div className="flex items-center justify-between mb-1">
                   <span className="text-sm text-muted-foreground">RPC URL</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-mono max-w-[200px] truncate">
-                      {deploymentData.rpcUrl}
-                    </span>
+                  {hasValidRpcUrl && stats?.isResponding && (
+                    <Badge variant="outline" className="text-xs text-green-600 border-green-600">
+                      Live
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-mono max-w-[85%] truncate">
+                    {deploymentData.rpcUrl || 'No RPC URL configured'}
+                  </span>
+                  {deploymentData.rpcUrl && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -448,33 +456,93 @@ const Dashboard = () => {
                     >
                       <Copy className="h-3 w-3" />
                     </Button>
+                  )}
+                </div>
+                {!hasValidRpcUrl && deploymentData.rpcUrl && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Update with your real endpoint after deploying your chain.
+                  </p>
+                )}
+              </div>
+
+              {/* Network & Chain Info */}
+              <div className="py-2 border-b border-border/50">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm text-muted-foreground">Network</span>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Parent Chain:</span>
+                    <span className="text-sm font-medium">{deploymentData.baseNetwork}</span>
                   </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Chain Type:</span>
+                    <span className="text-sm font-medium">Arbitrum Orbit L3</span>
+                  </div>
+                  {deploymentData.chainId && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Chain ID:</span>
+                      <span className="text-sm font-mono">{deploymentData.chainId}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Token Information */}
+              <div className="py-2 border-b border-border/50">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm text-muted-foreground">Tokens</span>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Native Token:</span>
+                    <span className="text-sm font-medium">{deploymentData.nativeToken} ({deploymentData.symbol})</span>
+                  </div>
+                  {deploymentData.gasTokenSymbol && deploymentData.gasTokenSymbol !== 'ETH' && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Gas Token:</span>
+                      <span className="text-sm font-medium">{deploymentData.gasTokenName} ({deploymentData.gasTokenSymbol})</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Explorer URL (if available) */}
+              {deploymentData.explorerUrl && (
+                <div className="py-2 border-b border-border/50">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-muted-foreground">Block Explorer</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-mono max-w-[85%] truncate">
+                      {deploymentData.explorerUrl}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => copyToClipboard(deploymentData.explorerUrl, "Explorer URL")}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  {!hasValidRpcUrl && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Explorer URL for your deployed chain.
+                    </p>
+                  )}
                 </div>
               )}
 
-              {!hasValidRpcUrl && (
-                <div className="flex items-center justify-between py-2 border-b border-border/50">
-                  <span className="text-sm text-muted-foreground">RPC URL</span>
-                  <span className="text-sm text-amber-600">Not yet configured</span>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between py-2 border-b border-border/50">
-                <span className="text-sm text-muted-foreground">Base Network</span>
-                <span className="text-sm font-medium">{deploymentData.baseNetwork}</span>
-              </div>
-
-              <div className="flex items-center justify-between py-2 border-b border-border/50">
-                <span className="text-sm text-muted-foreground">Native Token</span>
-                <span className="text-sm font-medium">{deploymentData.nativeToken}</span>
-              </div>
-
+              {/* Gas Token Address (if using custom gas token) */}
               {deploymentData.gasTokenAddress && deploymentData.gasTokenAddress !== '0x0000000000000000000000000000000000000000' && (
-                <div className="flex items-center justify-between py-2 border-b border-border/50">
-                  <span className="text-sm text-muted-foreground">Custom Gas Token</span>
+                <div className="py-2 border-b border-border/50">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-muted-foreground">Gas Token Address</span>
+                  </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-mono text-xs">
-                      {deploymentData.gasTokenAddress.slice(0, 6)}...{deploymentData.gasTokenAddress.slice(-4)}
+                      {deploymentData.gasTokenAddress}
                     </span>
                     <Button
                       variant="ghost"
@@ -485,6 +553,9 @@ const Dashboard = () => {
                       <Copy className="h-3 w-3" />
                     </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ERC-20 token address on {deploymentData.baseNetwork}
+                  </p>
                 </div>
               )}
             </div>
