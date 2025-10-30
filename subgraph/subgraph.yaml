@@ -1,0 +1,26 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: OrbitLaunchRegistry
+    network: arbitrum-one # or arbitrum-sepolia for testnet
+    source:
+      address: "YOUR_CONTRACT_ADDRESS"
+      abi: OrbitLaunchRegistry
+      startBlock: 0 # Replace with deployment block
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Deployment
+        - User
+        - GlobalStats
+      abis:
+        - name: OrbitLaunchRegistry
+          file: ./abis/OrbitLaunchRegistry.json
+      eventHandlers:
+        - event: DeploymentRegistered(indexed bytes32,indexed address,bytes32,uint64,uint64)
+          handler: handleDeploymentRegistered
+      file: ./src/mapping.ts
