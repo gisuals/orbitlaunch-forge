@@ -1,0 +1,20 @@
+type Deployment @entity {
+  id: Bytes! # deploymentId
+  deployer: Bytes!
+  metadataHash: Bytes!
+  chainId: BigInt!
+  timestamp: BigInt!
+  txHash: Bytes!
+}
+
+type User @entity {
+  id: Bytes! # user address
+  deployments: [Deployment!]! @derivedFrom(field: "deployer")
+  totalDeployments: BigInt!
+}
+
+type GlobalStats @entity {
+  id: ID! # "global"
+  totalDeployments: BigInt!
+  uniqueDeployers: BigInt!
+}

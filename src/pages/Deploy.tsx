@@ -18,8 +18,9 @@ import { ArrowLeft, Rocket, Loader2, AlertCircle, Sparkles } from "lucide-react"
 import { toast } from "sonner";
 import { useDeployContract } from "@/hooks/useDeployContract";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useAccount, useChainId, useSwitchChain } from "wagmi";
+import { useChainId, useSwitchChain, usePublicClient } from "wagmi";
 import { arbitrumSepolia } from "wagmi/chains";
+import { decodeEventLog } from "viem";
 import { TemplateSelector } from "@/components/TemplateSelector";
 import { GasTokenSelector } from "@/components/GasTokenSelector";
 import { type ChainTemplate } from "@/config/templates";
@@ -30,6 +31,7 @@ const Deploy = () => {
   const { registerDeployment, isLoading, isSuccess, txHash, error, isConnected, address } = useDeployContract();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
+  const publicClient = usePublicClient();
 
   const isCorrectNetwork = chainId === arbitrumSepolia.id;
 
@@ -69,29 +71,110 @@ const Deploy = () => {
 
   // Watch for successful deployment
   useEffect(() => {
-    if (isSuccess && txHash) {
-      const deploymentData = {
-        ...formData,
-        txHash,
-        chainId: Math.floor(Math.random() * 900000) + 100000,
-        rpcUrl: '', // RPC URL will be configured after actual chain deployment
-        deployedAt: new Date().toISOString(),
-        deployer: address,
-        templateType: selectedTemplate,
-        gasTokenAddress,
-        gasTokenSymbol: gasTokenInfo?.symbol,
-        gasTokenName: gasTokenInfo?.name,
-        status: 'registered', // Chain is registered, not yet deployed
+    if (isSuccess && txHash && publicClient) {
+      const fetchDeploymentId = async () => {
+        try {
+          // Get transaction receipt to extract deploymentId
+          const receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+
+          // Find the DeploymentRegistered event
+          const deploymentEvent = receipt.logs.find((log: any) => {
+            try {
+              const decoded = decodeEventLog({
+                abi: [{
+                  anonymous: false,
+                  inputs: [
+                    { indexed: true, name: 'deploymentId', type: 'bytes32' },
+                    { indexed: true, name: 'deployer', type: 'address' },
+                    { indexed: false, name: 'metadataHash', type: 'bytes32' },
+                    { indexed: false, name: 'chainId', type: 'uint64' },
+                    { indexed: false, name: 'timestamp', type: 'uint64' }
+                  ],
+                  name: 'DeploymentRegistered',
+                  type: 'event'
+                }],
+                data: log.data,
+                topics: log.topics,
+              });
+              return decoded.eventName === 'DeploymentRegistered';
+            } catch {
+              return false;
+            }
+          });
+
+          let deploymentId = '';
+          if (deploymentEvent) {
+            const decoded: any = decodeEventLog({
+              abi: [{
+                anonymous: false,
+                inputs: [
+                  { indexed: true, name: 'deploymentId', type: 'bytes32' },
+                  { indexed: true, name: 'deployer', type: 'address' },
+                  { indexed: false, name: 'metadataHash', type: 'bytes32' },
+                  { indexed: false, name: 'chainId', type: 'uint64' },
+                  { indexed: false, name: 'timestamp', type: 'uint64' }
+                ],
+                name: 'DeploymentRegistered',
+                type: 'event'
+              }],
+              data: deploymentEvent.data,
+              topics: deploymentEvent.topics,
+            });
+            deploymentId = decoded.args.deploymentId;
+          }
+
+          const deploymentData = {
+            ...formData,
+            txHash,
+            deploymentId, // Store deployment ID for updates
+            chainId: Math.floor(Math.random() * 900000) + 100000,
+            rpcUrl: `https://rpc.${formData.chainName.toLowerCase().replace(/\s+/g, '-')}.arbitrum.io`,
+            explorerUrl: `https://explorer.${formData.chainName.toLowerCase().replace(/\s+/g, '-')}.arbitrum.io`,
+            deployedAt: new Date().toISOString(),
+            deployer: address,
+            templateType: selectedTemplate,
+            gasTokenAddress,
+            gasTokenSymbol: gasTokenInfo?.symbol,
+            gasTokenName: gasTokenInfo?.name,
+            status: 'registered', // Chain is registered, not yet deployed
+          };
+
+          sessionStorage.setItem("deploymentData", JSON.stringify(deploymentData));
+          if (deploymentId) {
+            sessionStorage.setItem("lastDeploymentId", deploymentId);
+          }
+
+          toast.success("Chain registered successfully! Configuration saved on-chain.");
+
+          setTimeout(() => {
+            navigate("/success");
+          }, 1000);
+        } catch (err) {
+          console.error("Error fetching deployment ID:", err);
+          // Still save without deploymentId
+          const deploymentData = {
+            ...formData,
+            txHash,
+            chainId: Math.floor(Math.random() * 900000) + 100000,
+            rpcUrl: `https://rpc.${formData.chainName.toLowerCase().replace(/\s+/g, '-')}.arbitrum.io`,
+            explorerUrl: `https://explorer.${formData.chainName.toLowerCase().replace(/\s+/g, '-')}.arbitrum.io`,
+            deployedAt: new Date().toISOString(),
+            deployer: address,
+            templateType: selectedTemplate,
+            gasTokenAddress,
+            gasTokenSymbol: gasTokenInfo?.symbol,
+            gasTokenName: gasTokenInfo?.name,
+            status: 'registered',
+          };
+          sessionStorage.setItem("deploymentData", JSON.stringify(deploymentData));
+          toast.success("Chain registered successfully!");
+          setTimeout(() => navigate("/success"), 1000);
+        }
       };
 
-      sessionStorage.setItem("deploymentData", JSON.stringify(deploymentData));
-      toast.success("Chain registered successfully! Configuration saved on-chain.");
-
-      setTimeout(() => {
-        navigate("/success");
-      }, 1000);
+      fetchDeploymentId();
     }
-  }, [isSuccess, txHash, navigate, formData, address, selectedTemplate, gasTokenAddress, gasTokenInfo]);
+  }, [isSuccess, txHash, navigate, formData, address, selectedTemplate, gasTokenAddress, gasTokenInfo, publicClient]);
 
   // Watch for errors
   useEffect(() => {

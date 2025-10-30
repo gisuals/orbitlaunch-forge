@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   ArrowLeft,
@@ -12,17 +14,27 @@ import {
   ExternalLink,
   Copy,
   Download,
-  CheckCircle2,
   AlertCircle,
-  Loader2
+  Loader2,
+  Edit,
+  Check,
+  X
 } from "lucide-react";
 import { useChainStats, useRecentBlocks } from "@/hooks/useChainStats";
+import { useUpdateDeployment } from "@/hooks/useUpdateDeployment";
+import { validateRpcUrl } from "@/lib/rpcValidator";
 import { toast } from "sonner";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [deploymentData, setDeploymentData] = useState<any>(null);
+  const [isEditingRpc, setIsEditingRpc] = useState(false);
+  const [newRpcUrl, setNewRpcUrl] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationError, setValidationError] = useState("");
+
+  const { updateDeployment, isUploading, isLoading, isSuccess: updateSuccess } = useUpdateDeployment();
 
   useEffect(() => {
     // Try to get deployment data from sessionStorage first
@@ -46,23 +58,88 @@ const Dashboard = () => {
   }, [searchParams]);
 
   const rpcUrl = deploymentData?.rpcUrl || "";
-  const hasRpcUrl = rpcUrl && rpcUrl.length > 0 && rpcUrl.startsWith('http');
+  // Check if it's a real RPC URL (not a placeholder)
+  const isPlaceholderUrl = rpcUrl.includes('rpc.') && rpcUrl.includes('.arbitrum.io');
+  const hasValidRpcUrl = rpcUrl && rpcUrl.length > 0 && rpcUrl.startsWith('http') && !isPlaceholderUrl;
 
-  // Only fetch stats if we have a valid RPC URL
+  // Only fetch stats if we have a valid (non-placeholder) RPC URL
   const { stats, isLoading: statsLoading, error: statsError } = useChainStats(
-    hasRpcUrl ? rpcUrl : '',
-    hasRpcUrl ? 10000 : 0 // Disable polling if no RPC
+    hasValidRpcUrl ? rpcUrl : '',
+    hasValidRpcUrl ? 10000 : 0 // Disable polling if no RPC
   );
   const { blocks, averageBlockTime, isLoading: blocksLoading } = useRecentBlocks(
-    hasRpcUrl ? rpcUrl : '',
+    hasValidRpcUrl ? rpcUrl : '',
     5,
-    hasRpcUrl ? 15000 : 0 // Disable polling if no RPC
+    hasValidRpcUrl ? 15000 : 0 // Disable polling if no RPC
   );
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast.success(`${label} copied to clipboard!`);
   };
+
+  const handleUpdateRpcUrl = async () => {
+    if (!newRpcUrl.trim()) {
+      setValidationError("Please enter an RPC URL");
+      return;
+    }
+
+    // Validate RPC URL
+    setIsValidating(true);
+    setValidationError("");
+
+    const validation = await validateRpcUrl(newRpcUrl);
+
+    setIsValidating(false);
+
+    if (!validation.isValid) {
+      setValidationError(validation.error || "Invalid RPC URL");
+      toast.error(`RPC validation failed: ${validation.error}`);
+      return;
+    }
+
+    // Show validation success
+    toast.success(`RPC URL validated! Chain ID: ${validation.chainId}, Block: ${validation.blockNumber}`);
+
+    // Update metadata with new RPC URL
+    const updatedMetadata = {
+      ...deploymentData,
+      rpcUrl: newRpcUrl,
+      explorerUrl: deploymentData.explorerUrl,
+    };
+
+    try {
+      // Need deploymentId from contract - for now store locally
+      // In production, fetch deploymentId from contract events
+      const deploymentId = deploymentData.deploymentId || sessionStorage.getItem("lastDeploymentId");
+
+      if (!deploymentId) {
+        toast.error("Deployment ID not found. Please re-register your chain.");
+        return;
+      }
+
+      await updateDeployment(deploymentId, updatedMetadata);
+
+      // Update local storage
+      setDeploymentData(updatedMetadata);
+      sessionStorage.setItem("deploymentData", JSON.stringify(updatedMetadata));
+
+      setIsEditingRpc(false);
+      setNewRpcUrl("");
+      toast.success("RPC URL updated successfully!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update RPC URL");
+    }
+  };
+
+  // Watch for successful update
+  useEffect(() => {
+    if (updateSuccess) {
+      toast.success("RPC URL updated on-chain!");
+      // Refresh page data
+      window.location.reload();
+    }
+  }, [updateSuccess]);
 
   const exportConfig = () => {
     const config = {
@@ -130,24 +207,124 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Registration Notice */}
-        {!hasRpcUrl && (
+        {!hasValidRpcUrl && (
           <Card className="p-6 mb-6 border-amber-500/50 bg-amber-500/5">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
               <div className="flex-1">
                 <h3 className="font-semibold text-amber-500 mb-2">Chain Registered - Deployment Pending</h3>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Your chain configuration has been successfully registered on-chain. However, the actual L3 chain
-                  deployment requires additional setup through Arbitrum's Orbit deployment tools.
+                  Your chain configuration has been successfully registered on-chain with a placeholder RPC URL.
+                  The actual L3 chain deployment requires additional setup through Arbitrum's Orbit deployment tools.
                 </p>
                 <div className="space-y-2 text-sm">
+                  <p className="font-medium">Why is the RPC URL showing but not working?</p>
+                  <p className="text-muted-foreground mb-3">
+                    The RPC URL displayed below (<code className="text-xs bg-background/50 px-1 py-0.5 rounded">{rpcUrl}</code>) is a placeholder
+                    for your future chain. It won't respond until you deploy the actual Arbitrum Orbit chain infrastructure.
+                  </p>
                   <p className="font-medium">Next Steps:</p>
                   <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
                     <li>Use <a href="https://docs.arbitrum.io/launch-orbit-chain/orbit-quickstart" target="_blank" rel="noopener noreferrer" className="text-primary underline">Arbitrum Orbit CLI</a> to deploy your L3 chain</li>
-                    <li>Configure the chain using your registered parameters</li>
-                    <li>Return here and update the RPC URL to view live stats</li>
+                    <li>Configure the chain using your registered parameters and templates</li>
+                    <li>Once deployed, your actual RPC URL will match this placeholder format</li>
                   </ol>
                 </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* RPC URL Update Card */}
+        {!hasValidRpcUrl && (
+          <Card className="p-6 mb-6 border-primary/50 bg-primary/5">
+            <div className="flex items-start gap-3">
+              <Edit className="h-5 w-5 text-primary mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-primary mb-2">
+                  {isEditingRpc ? "Update RPC URL" : "Have you deployed your chain?"}
+                </h3>
+
+                {!isEditingRpc ? (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      If you've already deployed your Arbitrum Orbit L3 chain using the Orbit SDK or deployment tools,
+                      you can update your RPC URL here to connect it to OrbitLaunch Dashboard.
+                    </p>
+                    <Button
+                      variant="default"
+                      onClick={() => setIsEditingRpc(true)}
+                      className="gap-2"
+                    >
+                      <Edit className="h-4 w-4" />
+                      Update RPC URL
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="rpcUrl">RPC URL</Label>
+                      <Input
+                        id="rpcUrl"
+                        placeholder="https://your-chain-rpc.example.com"
+                        value={newRpcUrl}
+                        onChange={(e) => {
+                          setNewRpcUrl(e.target.value);
+                          setValidationError("");
+                        }}
+                        disabled={isValidating || isUploading || isLoading}
+                      />
+                      {validationError && (
+                        <p className="text-sm text-destructive">{validationError}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Enter your deployed chain's RPC endpoint. We'll validate it before updating.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={handleUpdateRpcUrl}
+                        disabled={isValidating || isUploading || isLoading || !newRpcUrl.trim()}
+                        className="gap-2"
+                      >
+                        {isValidating ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Validating...
+                          </>
+                        ) : isUploading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Uploading to IPFS...
+                          </>
+                        ) : isLoading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Updating on-chain...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="h-4 w-4" />
+                            Update RPC URL
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsEditingRpc(false);
+                          setNewRpcUrl("");
+                          setValidationError("");
+                        }}
+                        disabled={isValidating || isUploading || isLoading}
+                      >
+                        <X className="h-4 w-4" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </Card>
@@ -161,7 +338,7 @@ const Dashboard = () => {
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="gap-1">
                   <Activity className="h-3 w-3" />
-                  {hasRpcUrl ? (stats?.isResponding ? "Live" : "Offline") : "Registered"}
+                  {hasValidRpcUrl ? (stats?.isResponding ? "Live" : "Offline") : "Registered"}
                 </Badge>
                 <Badge variant="outline">{deploymentData.symbol}</Badge>
                 {deploymentData.templateType && (
@@ -242,7 +419,7 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {statsError && hasRpcUrl && (
+        {statsError && hasValidRpcUrl && (
           <Card className="p-6 mb-8 border-destructive/50 bg-destructive/5">
             <div className="flex items-center gap-2 text-destructive">
               <AlertCircle className="h-5 w-5" />
@@ -256,7 +433,7 @@ const Dashboard = () => {
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4">Chain Configuration</h3>
             <div className="space-y-3">
-              {hasRpcUrl && (
+              {hasValidRpcUrl && (
                 <div className="flex items-center justify-between py-2 border-b border-border/50">
                   <span className="text-sm text-muted-foreground">RPC URL</span>
                   <div className="flex items-center gap-2">
@@ -275,7 +452,7 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {!hasRpcUrl && (
+              {!hasValidRpcUrl && (
                 <div className="flex items-center justify-between py-2 border-b border-border/50">
                   <span className="text-sm text-muted-foreground">RPC URL</span>
                   <span className="text-sm text-amber-600">Not yet configured</span>
