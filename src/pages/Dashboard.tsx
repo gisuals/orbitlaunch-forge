@@ -24,6 +24,8 @@ import { useChainStats, useRecentBlocks } from "@/hooks/useChainStats";
 import { useUpdateDeployment } from "@/hooks/useUpdateDeployment";
 import { validateRpcUrl } from "@/lib/rpcValidator";
 import { toast } from "sonner";
+import { AddToMetaMask } from "@/components/AddToMetaMask";
+import { ChainInteractionGuide } from "@/components/ChainInteractionGuide";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -350,6 +352,18 @@ const Dashboard = () => {
             </div>
 
             <div className="flex gap-2">
+              {hasValidRpcUrl && (
+                <AddToMetaMask
+                  chainId={deploymentData.chainId}
+                  chainName={deploymentData.chainName}
+                  nativeTokenName={deploymentData.nativeToken}
+                  nativeTokenSymbol={deploymentData.symbol}
+                  rpcUrl={deploymentData.rpcUrl}
+                  explorerUrl={deploymentData.explorerUrl}
+                  variant="outline"
+                  size="sm"
+                />
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -642,6 +656,17 @@ const Dashboard = () => {
             </div>
           </Card>
         )}
+
+        {/* Chain Interaction Guide */}
+        <div className="mt-8">
+          <ChainInteractionGuide
+            chainId={deploymentData.chainId}
+            chainName={deploymentData.chainName}
+            rpcUrl={deploymentData.rpcUrl}
+            explorerUrl={deploymentData.explorerUrl}
+            nativeTokenSymbol={deploymentData.symbol}
+          />
+        </div>
       </main>
     </div>
   );

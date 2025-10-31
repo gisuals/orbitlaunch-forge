@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CheckCircle2, Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { AddToMetaMaskCard } from "@/components/AddToMetaMask";
+import { ChainInteractionGuide } from "@/components/ChainInteractionGuide";
 
 interface DeploymentData {
   chainName: string;
@@ -251,6 +253,31 @@ const Success = () => {
             </div>
           </div>
         </Card>
+
+        {/* Add to MetaMask Section */}
+        <Card className="p-6 shadow-card border-border/50 mt-6">
+          <h3 className="text-lg font-semibold mb-4">Add Network to MetaMask</h3>
+          <AddToMetaMaskCard
+            chainId={data.chainId}
+            chainName={data.chainName}
+            nativeTokenName={data.nativeToken}
+            nativeTokenSymbol={data.symbol}
+            rpcUrl={data.rpcUrl}
+            explorerUrl={data.explorerUrl}
+            showInstructions={true}
+          />
+        </Card>
+
+        {/* Interaction Guide */}
+        <div className="mt-6">
+          <ChainInteractionGuide
+            chainId={data.chainId}
+            chainName={data.chainName}
+            rpcUrl={data.rpcUrl}
+            explorerUrl={data.explorerUrl}
+            nativeTokenSymbol={data.symbol}
+          />
+        </div>
       </main>
     </div>
   );
