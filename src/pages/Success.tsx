@@ -209,25 +209,36 @@ const Success = () => {
               Deployed at: {new Date(data.deployedAt).toLocaleString()}
             </p>
 
-            <div className="flex gap-3">
-              <Button
-                variant="hero"
-                size="lg"
-                className="flex-1 gap-2"
-                asChild
-              >
-                <a
-                  href="https://sepolia.arbiscan.io/address/0x4D7d440a869E5Aadd2b4589bAeaEbff3391a3232"
-                  target="_blank"
-                  rel="noopener noreferrer"
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-3">
+                <Button
+                  variant="hero"
+                  size="lg"
+                  className="flex-1 gap-2"
+                  onClick={() => navigate("/dashboard")}
                 >
-                  <ExternalLink className="h-4 w-4" />
-                  View Contract
-                </a>
-              </Button>
-              
+                  View Dashboard
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="flex-1 gap-2"
+                  asChild
+                >
+                  <a
+                    href="https://sepolia.arbiscan.io/address/0x4D7d440a869E5Aadd2b4589bAeaEbff3391a3232"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    View Contract
+                  </a>
+                </Button>
+              </div>
+
               <Button
-                variant="outline"
+                variant="ghost"
                 size="lg"
                 onClick={() => {
                   sessionStorage.removeItem("deploymentData");
@@ -235,7 +246,7 @@ const Success = () => {
                 }}
                 className="rounded-2xl"
               >
-                Deploy Another
+                Deploy Another Chain
               </Button>
             </div>
           </div>
