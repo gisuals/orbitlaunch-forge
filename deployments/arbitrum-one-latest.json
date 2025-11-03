@@ -1,0 +1,13 @@
+{
+  "network": "arbitrum-one",
+  "chainId": 42161,
+  "contractAddress": "0x3a2D0ac1CD3389A6a9E842d81806A5457e0a1fA0",
+  "deployer": "0x208B2660e5F62CDca21869b389c5aF9E7f0faE89",
+  "deployerBalance": "0.000829377405837",
+  "blockNumber": 396349501,
+  "transactionHash": "0xd35bcb06bcb8e41e21749263f762b67b969d923eeae9c3d8bc657633a785a4e4",
+  "timestamp": "2025-11-03T11:43:28.777Z",
+  "gasUsed": "332169",
+  "gasPrice": "0.01",
+  "deploymentCost": "0.00000332169"
+}
