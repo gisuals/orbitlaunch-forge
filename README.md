@@ -22,7 +22,9 @@
 - 📦 **IPFS Metadata**: Decentralized storage for chain configuration
 - ⚡ **Gas Optimized**: Smart contracts optimized for minimal gas costs
 
-**Live on Arbitrum Sepolia**: [`0x4D7d440a869E5Aadd2b4589bAeaEbff3391a3232`](https://sepolia.arbiscan.io/address/0x4D7d440a869E5Aadd2b4589bAeaEbff3391a3232)
+**Live on Arbitrum One (Mainnet)**: [`0x3a2D0ac1CD3389A6a9E842d81806A5457e0a1fA0`](https://arbiscan.io/address/0x3a2D0ac1CD3389A6a9E842d81806A5457e0a1fA0)
+
+**Testnet (Arbitrum Sepolia)**: [`0x4D7d440a869E5Aadd2b4589bAeaEbff3391a3232`](https://sepolia.arbiscan.io/address/0x4D7d440a869E5Aadd2b4589bAeaEbff3391a3232)
 
 ---
 
