@@ -1,0 +1,44 @@
+# Hardhat artifacts and cache
+artifacts/
+cache/
+typechain-types/
+coverage/
+coverage.json
+
+# Test files
+test/
+*.test.ts
+*.test.js
+
+# Contract files
+contracts/
+scripts/deploy.ts
+scripts/deploy-standalone.mjs
+hardhat.config.ts
+tsconfig.hardhat.json
+
+# Documentation
+*.md
+!README.md
+
+# Deployment artifacts
+deployments/
+
+# Node modules (already ignored by Vercel)
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Build tools
+verify.sh

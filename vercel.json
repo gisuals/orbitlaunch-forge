@@ -10,7 +10,35 @@
   ],
   "env": {
     "VITE_WALLETCONNECT_PROJECT_ID": "1eebe528ca0ce94a99ceaa2e915058d7",
-    "VITE_CONTRACT_ADDRESS": "0x4D7d440a869E5Aadd2b4589bAeaEbff3391a3232",
+    "VITE_CONTRACT_ADDRESS": "0x3a2D0ac1CD3389A6a9E842d81806A5457e0a1fA0",
     "VITE_PINATA_JWT": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiJkZDFjN2I3NC1hZTI1LTRlN2EtODU3Zi1lY2RhYzcyNzAxMjUiLCJlbWFpbCI6Imlkb2xvcndpbGx5QGljbG91ZC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwicGluX3BvbGljeSI6eyJyZWdpb25zIjpbeyJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MSwiaWQiOiJGUkExIn0seyJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MSwiaWQiOiJOWUMxIn1dLCJ2ZXJzaW9uIjoxfSwibWZhX2VuYWJsZWQiOmZhbHNlLCJzdGF0dXMiOiJBQ1RJVkUifSwiYXV0aGVudGljYXRpb25UeXBlIjoic2NvcGVkS2V5Iiwic2NvcGVkS2V5S2V5IjoiZjk1MTFlODE4NTUwNjRkZmQ3YzEiLCJzY29wZWRLZXlTZWNyZXQiOiI0MjZkYmYyNWNmMTg2ZGU4MTU5MjI2NWZiZTE0MzNhMGQ1NTY0ZGQzMGM0ZjU0ZThmNDdiNTY0MjNiZGI4MDljIiwiZXhwIjoxNzkzMTkwMDgwfQ.3uu2dFejZAnlN7GnKiKGvl6kKOk6oBZsGQFCcOXJlys"
-  }
+  },
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ]
 }
